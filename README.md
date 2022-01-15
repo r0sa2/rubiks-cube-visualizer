@@ -1,4 +1,4 @@
-# Rubik's Cube visualizer
+# Rubik's cube visualizer
 ## About
 
 The visualizer has only been designed to work with Google Chrome. The following is a screenshot of the starting view of the cube visualization. 
