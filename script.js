@@ -22,6 +22,8 @@ var pieceIndicesAnticlockwiseSwaps = [[6, 8], [0, 6], [0, 2], [3, 7], [1, 3], [1
 var faceIndicesZSwaps = [[5, 5], [4, 4], [2, 0], [2, 1], [3, 0], [3, 1], [0, 2], [0, 3], [1, 2], [1, 3]];
 var faceIndicesXSwaps = [[0, 0], [1, 1], [2, 5], [2, 4], [3, 5], [3, 4], [5, 2], [5, 3], [4, 2], [4, 3]];
 var faceIndicesYSwaps = [[2, 2], [3, 3], [5, 0], [5, 1], [4, 0], [4, 1], [0, 5], [0, 4], [1, 5], [1, 4]];
+var scramble = [];
+var canMove = true;
 
 // Align piece faces
 for (let i = 0; i < pieces.length; i++) {
@@ -142,7 +144,28 @@ function swapFaceOverlays(pieceIndices, axis, isClockwise) {
   }
 }
 
-function rotate(pieceIndices, axis, isClockwise) {    
+function rotate(leftIndex, rightIndex, forward) {
+  canMove = false;
+  if (leftIndex > rightIndex) {
+    if (!forward) {
+      scramble = [];
+    }
+    canMove = true;
+    return;
+  };
+
+  let pieceIndices, axis, isClockwise;
+
+  if (forward) {
+    pieceIndices = scramble[leftIndex][0];
+    axis = scramble[leftIndex][1];
+    isClockwise = scramble[leftIndex][2];
+  } else {
+    pieceIndices = scramble[rightIndex][0];
+    axis = scramble[rightIndex][1];
+    isClockwise = !scramble[rightIndex][2];    
+  }
+
   let rotationDuration = 400;
   let startTime = Date.now();
   
@@ -158,11 +181,17 @@ function rotate(pieceIndices, axis, isClockwise) {
       requestAnimationFrame(helper);
     } else {
       swapFaceOverlays(pieceIndices, axis, isClockwise);
+      if (forward) {
+        rotate(leftIndex + 1, rightIndex, true);
+      } else {
+        rotate(leftIndex, rightIndex - 1, false);
+      }
     }
   })();
 }
 
 function mousedown(mdEvent) {
+  if (!canMove) return;
   var [_, pX, pY] = cube.style.transform.match(/-?\d+\.?\d*/g).map(Number);
   var piece = mdEvent.target.closest(".piece");
   var face = mdEvent.target.closest(".face");
@@ -183,22 +212,35 @@ function mousedown(mdEvent) {
         let pieceIndex = parseInt(piece.id);
         
         let pieceIndices;
-         if (axis === "X") {
-          if (pieceIndicesX1.includes(pieceIndex)) { pieceIndices = pieceIndicesX1; }
-          else if (pieceIndicesX2.includes(pieceIndex)) { pieceIndices = pieceIndicesX2; }
-          else { pieceIndices = pieceIndicesX3; }
+        if (axis === "X") {
+          if (pieceIndicesX1.includes(pieceIndex)) {
+            pieceIndices = pieceIndicesX1;
+          } else if (pieceIndicesX2.includes(pieceIndex)) {
+            pieceIndices = pieceIndicesX2;
+          } else { 
+            pieceIndices = pieceIndicesX3;
+          }
         } else if (axis === "Y") {
-          if (pieceIndicesY1.includes(pieceIndex)) { pieceIndices = pieceIndicesY1; }
-          else if (pieceIndicesY2.includes(pieceIndex)) { pieceIndices = pieceIndicesY2; }
-          else { pieceIndices = pieceIndicesY3; }          
+          if (pieceIndicesY1.includes(pieceIndex)) { 
+            pieceIndices = pieceIndicesY1;
+          } else if (pieceIndicesY2.includes(pieceIndex)) { 
+            pieceIndices = pieceIndicesY2; 
+          } else { 
+            pieceIndices = pieceIndicesY3;
+          }          
         } else {
-          if (pieceIndicesZ1.includes(pieceIndex)) { pieceIndices = pieceIndicesZ1; }
-          else if (pieceIndicesZ2.includes(pieceIndex)) { pieceIndices = pieceIndicesZ2; }
-          else { pieceIndices = pieceIndicesZ3; }          
+          if (pieceIndicesZ1.includes(pieceIndex)) { 
+            pieceIndices = pieceIndicesZ1; 
+          } else if (pieceIndicesZ2.includes(pieceIndex)) { 
+            pieceIndices = pieceIndicesZ2; 
+          } else { 
+            pieceIndices = pieceIndicesZ3;
+          }          
         }
         
         mouseup();
-        rotate(pieceIndices, axis, isClockwise);
+        scramble.push([pieceIndices, axis, isClockwise]);
+        rotate(scramble.length - 1, scramble.length - 1, true);
       }
     } else {
       cube.style.transform =
@@ -225,3 +267,54 @@ function mousedown(mdEvent) {
 }
 
 scene.addEventListener("mousedown", mousedown);
+
+function reset() {    
+  let rotationDuration = Math.max(3000, 400 * scramble.length);
+  let startTime = Date.now();
+  var [_, pX, pY] = cube.style.transform.match(/-?\d+\.?\d*/g).map(Number);
+  var dX = (-30 - pX) / rotationDuration;
+  var dY = (45 - pY) / rotationDuration;
+  
+  (function helper() {
+    let elapsed = Date.now() - startTime;
+
+    cube.style.transform = 
+    "translateZ(-150px)" + 
+    "rotateX(" + (pX + dX * elapsed) + "deg) " +
+    "rotateY(" + (pY + dY * elapsed) + "deg)";
+
+    if (elapsed <= rotationDuration) {
+      requestAnimationFrame(helper);
+    } else {
+      cube.style.transform = "translateZ(-150px) rotateX(-30deg) rotateY(45deg)";
+    }
+  })();
+
+  rotate(0, scramble.length - 1, false);
+}
+
+function shuffle(shuffleCount = 20) {
+  for (let i = 0; i < shuffleCount; i++) {
+    rand = Math.floor(Math.random() * 18);
+    if (rand === 0) { scramble.push([pieceIndicesX1, "X", true]); }
+    else if (rand === 1) { scramble.push([pieceIndicesX2, "X", true]); }
+    else if (rand === 2) { scramble.push([pieceIndicesX3, "X", true]); }
+    else if (rand === 3) { scramble.push([pieceIndicesY1, "Y", true]); }
+    else if (rand === 4) { scramble.push([pieceIndicesY2, "Y", true]); }
+    else if (rand === 5) { scramble.push([pieceIndicesY3, "Y", true]); }
+    else if (rand === 6) { scramble.push([pieceIndicesZ1, "Z", true]); }
+    else if (rand === 7) { scramble.push([pieceIndicesZ2, "Z", true]); }
+    else if (rand === 8) { scramble.push([pieceIndicesZ3, "Z", true]); }
+    else if (rand === 9) { scramble.push([pieceIndicesX1, "X", false]); }
+    else if (rand === 10) { scramble.push([pieceIndicesX2, "X", false]); }
+    else if (rand === 11) { scramble.push([pieceIndicesX3, "X", false]); }
+    else if (rand === 12) { scramble.push([pieceIndicesY1, "Y", false]); }
+    else if (rand === 13) { scramble.push([pieceIndicesY2, "Y", false]); }
+    else if (rand === 14) { scramble.push([pieceIndicesY3, "Y", false]); }
+    else if (rand === 15) { scramble.push([pieceIndicesZ1, "Z", false]); }
+    else if (rand === 16) { scramble.push([pieceIndicesZ2, "Z", false]); }
+    else if (rand === 17) { scramble.push([pieceIndicesZ3, "Z", false]); }
+  }
+
+  rotate(scramble.length - shuffleCount, scramble.length - 1, true);
+}
