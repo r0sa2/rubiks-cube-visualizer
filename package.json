@@ -1,0 +1,23 @@
+{
+  "name": "rubiks-cube-visualizer",
+  "version": "1.0.0",
+  "description": "This was my first attempt at 3D modelling. The visualizer has only been designed to work with Google Chrome.",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/r0s3r4d3/rubiks-cube-visualizer.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/r0s3r4d3/rubiks-cube-visualizer/issues"
+  },
+  "homepage": "https://github.com/r0s3r4d3/rubiks-cube-visualizer#readme",
+  "dependencies": {
+    "express": "^4.17.3"
+  }
+}
